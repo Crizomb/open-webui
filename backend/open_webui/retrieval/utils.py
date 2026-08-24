@@ -24,7 +24,6 @@ from open_webui.config import (
     RAG_EMBEDDING_QUERY_PREFIX,
     VECTOR_DB,
 )
-from open_webui.constants import ERROR_MESSAGES
 from open_webui.env import (
     AIOHTTP_CLIENT_ALLOW_REDIRECTS,
     AIOHTTP_CLIENT_SESSION_SSL,
@@ -50,7 +49,7 @@ from open_webui.retrieval.vector.main import GetResult, SearchResult
 from open_webui.retrieval.web.utils import get_web_loader
 from open_webui.utils.access_control.files import get_owner_accessible_folder_files, has_access_to_file
 from open_webui.utils.access_control.folders import has_folder_access
-from open_webui.utils.headers import get_json_bearer_headers, include_user_info_headers
+from open_webui.utils.headers import include_user_info_headers
 from open_webui.utils.misc import get_content_from_message, get_message_list
 
 log = logging.getLogger(__name__)
@@ -68,7 +67,6 @@ def is_youtube_url(url: str) -> bool:
 
 
 LOADER_CONFIG_KEYS = {
-    'file_max_size': 'rag.file.max_size',
     'youtube_language': 'rag.youtube_loader_language',
     'youtube_proxy_url': 'rag.youtube_loader_proxy_url',
     'web_loader_ssl_verification': 'web.loader.ssl_verification',
@@ -184,20 +182,11 @@ def _extract_text_from_binary_response(
 
     suffix = '.' + filename.split('.')[-1].lower() if '.' in filename else ''
 
-    max_size = loader_config.get('file_max_size')
-    max_bytes = int(max_size) * 1024 * 1024 if max_size else 0
+    with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as tmp:
+        tmp.write(response.content)
+        tmp_path = tmp.name
 
-    tmp_fd, tmp_path = tempfile.mkstemp(suffix=suffix)
     try:
-        downloaded = 0
-        # Stream to disk; response.content buffers the whole body in memory first.
-        with os.fdopen(tmp_fd, 'wb') as tmp:
-            for chunk in response.iter_content(64 * 1024):
-                downloaded += len(chunk)
-                if max_bytes and downloaded > max_bytes:
-                    raise ValueError(ERROR_MESSAGES.FILE_TOO_LARGE(size=f'{max_size} MB'))
-                tmp.write(chunk)
-
         loader = build_loader_from_config(request, loader_config)
         docs = loader.load(filename, content_type, tmp_path)
         for doc in docs:
@@ -890,7 +879,10 @@ def generate_openai_batch_embeddings(
     if isinstance(RAG_EMBEDDING_PREFIX_FIELD_NAME, str) and isinstance(prefix, str):
         json_data[RAG_EMBEDDING_PREFIX_FIELD_NAME] = prefix
 
-    headers = get_json_bearer_headers(key)
+    headers = {
+        'Content-Type': 'application/json',
+        'Authorization': f'Bearer {key}',
+    }
     if ENABLE_FORWARD_USER_INFO_HEADERS and user:
         headers = include_user_info_headers(headers, user)
 
@@ -920,7 +912,10 @@ async def agenerate_openai_batch_embeddings(
     if isinstance(RAG_EMBEDDING_PREFIX_FIELD_NAME, str) and isinstance(prefix, str):
         form_data[RAG_EMBEDDING_PREFIX_FIELD_NAME] = prefix
 
-    headers = get_json_bearer_headers(key)
+    headers = {
+        'Content-Type': 'application/json',
+        'Authorization': f'Bearer {key}',
+    }
     if ENABLE_FORWARD_USER_INFO_HEADERS and user:
         headers = include_user_info_headers(headers, user)
 
@@ -1036,7 +1031,10 @@ def generate_ollama_batch_embeddings(
     if isinstance(RAG_EMBEDDING_PREFIX_FIELD_NAME, str) and isinstance(prefix, str):
         json_data[RAG_EMBEDDING_PREFIX_FIELD_NAME] = prefix
 
-    headers = get_json_bearer_headers(key)
+    headers = {
+        'Content-Type': 'application/json',
+        'Authorization': f'Bearer {key}',
+    }
     if ENABLE_FORWARD_USER_INFO_HEADERS and user:
         headers = include_user_info_headers(headers, user)
 
@@ -1069,7 +1067,10 @@ async def agenerate_ollama_batch_embeddings(
     if isinstance(RAG_EMBEDDING_PREFIX_FIELD_NAME, str) and isinstance(prefix, str):
         form_data[RAG_EMBEDDING_PREFIX_FIELD_NAME] = prefix
 
-    headers = get_json_bearer_headers(key)
+    headers = {
+        'Content-Type': 'application/json',
+        'Authorization': f'Bearer {key}',
+    }
     if ENABLE_FORWARD_USER_INFO_HEADERS and user:
         headers = include_user_info_headers(headers, user)
 

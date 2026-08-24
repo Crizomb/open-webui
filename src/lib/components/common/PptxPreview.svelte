@@ -1,12 +1,10 @@
 <script lang="ts">
 	import { onDestroy, onMount, tick } from 'svelte';
 	import panzoom, { type PanZoom } from 'panzoom';
-	import { clampDocumentTargetPage } from '$lib/utils/documentPreview';
 
 	export let slides: string[] = [];
 	export let currentSlide = 0;
 	export let className = '';
-	export let targetPage: number | null = null;
 
 	let rootEl: HTMLDivElement;
 	let stageEl: HTMLElement;
@@ -24,8 +22,6 @@
 	let wheelDelta = 0;
 	let lastWheelNavigationAt = 0;
 	let lastScrolledSlide = -1;
-	let appliedTargetPage: number | null = null;
-	let appliedTargetSlides: string[] | null = null;
 	let thumbnailButtons: Array<HTMLButtonElement | undefined> = [];
 	const slideShortcutKeys = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'];
 	const wheelNavigationThreshold = 80;
@@ -162,7 +158,7 @@
 		const transform = pzInstance?.getTransform();
 		if (transform && Math.abs(transform.scale - 1) >= 0.01) {
 			e.preventDefault();
-			pzInstance?.moveBy(-e.deltaX, -e.deltaY, false);
+			pzInstance?.moveBy(-e.deltaX, -e.deltaY);
 			zoomLevel = pzInstance?.getTransform().scale ?? 1;
 			return;
 		}
@@ -205,18 +201,6 @@
 	$: if (mounted && safeSlide !== lastScrolledSlide) {
 		lastScrolledSlide = safeSlide;
 		void tick().then(scrollSelectedThumbnailIntoView);
-	}
-
-	$: if (
-		mounted &&
-		targetPage &&
-		slides.length > 0 &&
-		(targetPage !== appliedTargetPage || slides !== appliedTargetSlides)
-	) {
-		appliedTargetPage = targetPage;
-		appliedTargetSlides = slides;
-		const page = clampDocumentTargetPage(targetPage, slides.length);
-		if (page) selectSlide(page - 1);
 	}
 
 	onDestroy(() => {

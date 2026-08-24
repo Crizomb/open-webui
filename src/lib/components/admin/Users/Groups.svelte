@@ -59,11 +59,6 @@
 		adminGroupCount.set(groups.length);
 	};
 
-	/** @param {any} updatedGroup */
-	const updateGroup = (updatedGroup) => {
-		groups = groups.map((group) => (group.id === updatedGroup.id ? updatedGroup : group));
-	};
-
 	/** @param {any} group */
 	const addGroupHandler = async (group) => {
 		const res = await createNewGroup(localStorage.token, group).catch((error) => {
@@ -182,7 +177,7 @@
 		{#if filteredGroups.length !== 0}
 			<div class="mt-1 grid grid-cols-1">
 				{#each filteredGroups as group, idx (group.id)}
-					<GroupItem {group} {setGroups} {updateGroup} {defaultPermissions} />
+					<GroupItem {group} {setGroups} {defaultPermissions} />
 					{#if idx < filteredGroups.length - 1}
 						<hr class="border-gray-50 dark:border-gray-850/40" />
 					{/if}

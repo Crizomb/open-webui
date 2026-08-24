@@ -481,8 +481,7 @@
 			full_path: result?.full_path ?? path,
 			name,
 			mime_type: contentType,
-			content_type: contentType,
-			page: result?.page ?? params?.page
+			content_type: contentType
 		};
 	};
 
@@ -495,10 +494,6 @@
 			$settings?.terminalFileDisplay === 'inline' &&
 			isDirectTerminalServer(data.server?.url);
 		const params = defaultInline ? { ...data.params, inline: true } : data?.params;
-		const serverParams = data?.name === 'display_file' && params ? { ...params } : params;
-		if (serverParams && data?.name === 'display_file') {
-			delete serverParams.page;
-		}
 
 		console.log('executeTool', data, toolServer);
 
@@ -507,7 +502,7 @@
 				token,
 				toolServer.url,
 				data?.name,
-				serverParams,
+				params,
 				toolServerData,
 				chatId
 			);
@@ -524,7 +519,7 @@
 
 			if (data?.name === 'display_file' && params?.path && !inlineDisplayFile) {
 				if (result?.exists !== false) {
-					displayFileHandler(params.path, { showControls, showFileNavPath }, { page: params?.page });
+					displayFileHandler(params.path, { showControls, showFileNavPath });
 				}
 			}
 
